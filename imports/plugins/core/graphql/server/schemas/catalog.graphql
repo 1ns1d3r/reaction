@@ -20,6 +20,44 @@ type PriceRange {
   max: Float!
 }
 
+"The product price or price range for a specific currency"
+type ProductPricingInfo {
+  "The code for the currency these pricing details applies to"
+  currencyCode: String!
+
+  """
+  UI should display this price. If a product has multiple potential prices depending on selected
+  variants and options, then this is a price range string such as "$3.95 - $6.99". It includes the currency
+  symbols.
+  """
+  displayPrice: String!
+
+  "The price of the most expensive possible variant+option combination"
+  maxPrice: Float!
+
+  "The price of the least expensive possible variant+option combination"
+  minPrice: Float!
+}
+
+"The variant price or price range for a specific currency"
+type VariantPricingInfo {
+  "The code for the currency these pricing details applies to"
+  currencyCode: String!
+
+  """
+  UI should display this price. If a variant has multiple potential prices depending on selected
+  option, then this is a price range string such as "$3.95 - $6.99". It includes the currency
+  symbols.
+  """
+  displayPrice: String!
+
+  """
+  For variants with no options and for options, this will always be set to a price. For variants
+  with options, this will be `null`.
+  """
+  price: Float
+}
+
 "Holds metadata specific to a specific social network service"
 type SocialMetadata {
   "Which social network is this metadata for"
@@ -123,8 +161,11 @@ type CatalogProduct implements CatalogProductOrVariant & Node {
   "Dimensions and other information about the containers in which this product will be shipped"
   parcel: ShippingParcel
 
-  "The range of prices among all variants"
+  "(Deprecated. Use pricing.) The range of prices among all variants"
   price: PriceRange
+
+  "Price and related information, per currency"
+  pricing: [ProductPricingInfo]!
 
   "All media for this product and its variants"
   media: [ImageInfo]
@@ -242,8 +283,11 @@ type CatalogProductVariant implements CatalogProductOrVariant & Node {
   "The country of origin"
   originCountry: String
 
-  "The price, in the default shop currency"
+  "(Deprecated. Use pricing.) The price, in the default shop currency"
   price: Float!
+
+  "Price and related information, per currency"
+  pricing: [VariantPricingInfo]!
 
   "The shop to which this product variant belongs"
   shop: Shop!
@@ -391,6 +435,7 @@ extend type Query {
     "By default, items are sorted by when they were created, newest first. Set this to sort by one of the other allowed fields"
     sortBy: CatalogItemSortByField = createdAt
   ): CatalogItemConnection
+
   "Gets product from catalog"
   catalogItemProduct(
     "Provide either a product ID or slug"
